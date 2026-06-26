@@ -4,12 +4,14 @@ NeuroBase Ingestion CLI
 Usage:
   python -m app.workers.ingest_cli --dry-run    # Preview without uploading
   python -m app.workers.ingest_cli --run        # Full ingestion
+
+Environment variables required:
+  OPENROUTER_API_KEY - your OpenRouter API key
+  QDRANT_URL - Qdrant cluster URL
+  QDRANT_API_KEY - Qdrant API key
 """
 import argparse
 import asyncio
-import os
-
-# Set env vars for local testing (use your own key)
 
 
 async def main():
@@ -19,7 +21,7 @@ async def main():
     args = parser.parse_args()
     
     if args.dry_run:
-        print("🧪 DRY RUN MODE — Previewing data...")
+        print("DRY RUN MODE — Previewing data...")
         from app.workers.parser import parse_deck1_flashcard
         import json
         
@@ -30,15 +32,12 @@ async def main():
             parsed = parse_deck1_flashcard(card)
             if parsed:
                 print(f"\n--- Card {i+1} ---")
-                print(f"ID: {parsed['id']}")
                 print(f"Q: {parsed['question'][:100]}...")
-                print(f"A: {parsed['answer'][:100]}...")
                 print(f"Tags: {parsed['metadata']['tags']}")
-                print(f"Difficulty: {parsed['metadata']['difficulty']}")
         return
     
     if args.run:
-        print("🚀 RUNNING INGESTION...")
+        print("RUNNING INGESTION...")
         from app.workers.ingestion import run_full_ingestion
         result = await run_full_ingestion()
         print(f"\nDone! Result: {result}")
