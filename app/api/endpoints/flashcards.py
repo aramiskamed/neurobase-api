@@ -11,6 +11,7 @@ router = APIRouter()
 class FlashcardSearchResult(BaseModel):
     id: str
     content: str
+    question: str
     answer: Optional[str]
     source: str
     score: float
@@ -32,17 +33,21 @@ async def search_flashcards(
         vec = await embed_text(q)
         results = qdrant_search(collection, vec, top_k=top_k)
         
-        return [
-            FlashcardSearchResult(
+        output = []
+        for r in results:
+            payload = r.get("payload", {})
+            # Support both flat payload (our format) and nested metadata
+            inner = payload.get("metadata", payload)
+            output.append(FlashcardSearchResult(
                 id=str(r["id"]),
-                content=r["payload"]["content"],
-                answer=r["payload"].get("metadata", {}).get("answer"),
-                source=r["payload"]["metadata"].get("source", "unknown"),
-                score=r["score"],
-                tags=r["payload"]["metadata"].get("tags", []),
-            )
-            for r in results
-        ]
+                content=payload.get("content", ""),
+                question=payload.get("question", payload.get("content", "")[:100]),
+                answer=payload.get("answer") or inner.get("answer", ""),
+                source=inner.get("source", "unknown"),
+                score=r.get("score", 0),
+                tags=inner.get("tags", []),
+            ))
+        return output
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
