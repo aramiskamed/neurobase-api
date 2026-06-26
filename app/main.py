@@ -41,11 +41,36 @@ def health():
 def debug():
     from app.core.config import get_settings
     s = get_settings()
+    
+    # Test Qdrant connection
+    qdrant_ok = False
+    qdrant_collections = []
+    qdrant_error = ""
+    
+    try:
+        from qdrant_client import QdrantClient
+        c = QdrantClient(url=s.QDRANT_URL, api_key=s.QDRANT_API_KEY if s.QDRANT_API_KEY else None)
+        cols = c.get_collections()
+        qdrant_collections = [x.name for x in cols.collections]
+        qdrant_ok = True
+    except Exception as e:
+        qdrant_error = str(e)
+    
     return {
         "app_name": s.APP_NAME,
-        "api_str": s.API_V1_STR,
-        "qdrant_url": s.QDRANT_URL,
-        "openrouter_key_set": bool(s.OPENROUTER_API_KEY),
+        "env_vars": {
+            "QDRANT_URL_set": bool(s.QDRANT_URL),
+            "QDRANT_URL_value": s.QDRANT_URL,
+            "QDRANT_API_KEY_set": bool(s.QDRANT_API_KEY),
+            "OPENROUTER_API_KEY_set": bool(s.OPENROUTER_API_KEY),
+            "MINIMAX_API_KEY_set": bool(s.MINIMAX_API_KEY),
+            "CLERK_SECRET_KEY_set": bool(s.CLERK_SECRET_KEY),
+        },
+        "qdrant": {
+            "connected": qdrant_ok,
+            "error": qdrant_error,
+            "collections": qdrant_collections,
+        },
     }
 
 @app.get("/")
