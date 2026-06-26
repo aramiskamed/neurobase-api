@@ -52,23 +52,23 @@ def search(
             ]
         )
     
-    results = client.search(
+    response = client.query_points(
         collection_name=collection,
-        query_vector=query_vector,
+        query=query_vector,
         limit=top_k,
         query_filter=query_filter,
         with_payload=True,
-        score_threshold=0.6,
+        score_threshold=0.0,
     )
     
-    return [
-        {
-            "id": r.id,
-            "score": r.score,
-            "payload": r.payload,
-        }
-        for r in results
-    ]
+    results = []
+    for point in (response.points or []):
+        results.append({
+            "id": point.id,
+            "score": point.score,
+            "payload": point.payload or {},
+        })
+    return results
 
 
 def upsert(
