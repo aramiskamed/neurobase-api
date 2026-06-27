@@ -148,16 +148,19 @@ async def rag_query(
     for i, doc in enumerate(docs):
         payload = doc["payload"]
         # Support both flat and nested payload formats
-        meta = payload.get("metadata", payload)
+        meta = payload.get("metadata", {})
+        # Get the main content field (varies by content type)
+        content = (payload.get("content") or payload.get("text") or 
+                   payload.get("question", "") or payload.get("resposta", "") or "")
+        
         context_parts.append(
-            f"[{i+1}] {payload.get('content', payload.get('text', payload.get('question', '')))}\n"
-            f"Source: {meta.get('source', 'flashcard')} | "
-            f"Tags: {meta.get('tags', '')}"
+            f"[{i+1}] {content}\n"
+            f"Source: {meta.get('source', 'flashcard')}"
         )
         citations.append({
             "id": doc["id"],
             "score": doc["score"],
-            "content": (payload.get('content') or payload.get('text') or payload.get('question', ''))[:200],
+            "content": content[:200],
             "source": meta.get("source", "unknown"),
         })
     
